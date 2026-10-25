@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LoopUno</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (~68ch) that widens to 1040px for charts and tables; a lab-notebook results page. */
+:root {
+  --bg: #fbfcfd;
+  --surface: #f2f4f7;
+  --ink: #0e1116;
+  --ink-2: #4a5160;
+  --ink-3: #7a8191;
+  --rule: #dde1e8;
+  --accent: #2a78d6;      /* series 1: lr 1e-4 */
+  --series-2: #eb6834;    /* series 2: lr 1e-5 */
+  --ref: #9aa1ad;
+  --good: #0ca30c;
+  --font-display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111317; --surface: #1a1d23; --ink: #eef0f3; --ink-2: #b4bac6; --ink-3: #868d9b;
+    --rule: #2b3039; --accent: #3987e5; --series-2: #d95926; --ref: #6b7280; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111317; --surface: #1a1d23; --ink: #eef0f3; --ink-2: #b4bac6; --ink-3: #868d9b;
+  --rule: #2b3039; --accent: #3987e5; --series-2: #d95926; --ref: #6b7280; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 48px 72px; display: grid; gap: 56px; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2.6rem, 7vw, 4.4rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; }
+section { display: grid; gap: 20px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.lede { font-size: 1.25rem; line-height: 1.5; color: var(--ink-2); max-width: 46ch; }
+.hero { display: grid; gap: 22px; }
+.hero h1 span { color: var(--accent); }
+.mono { font-family: var(--font-mono); }
+.num { font-variant-numeric: tabular-nums; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.stat { background: var(--bg); padding: 20px 22px; display: grid; gap: 4px; align-content: start; }
+.stat .v { font-family: var(--font-display); font-size: 2.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 1.1rem; font-weight: 700; color: var(--ink-2); margin-left: 2px; }
+.stat .k { font-weight: 600; }
+.stat .d { font-size: 0.88rem; color: var(--ink-2); }
+
+.chart-card { display: grid; gap: 12px; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; align-items: baseline; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.86rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 18px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+.legend i.dash { background: repeating-linear-gradient(90deg, var(--ref) 0 4px, transparent 4px 7px); height: 1.5px; }
+.legend i.dot { width: 9px; height: 9px; border-radius: 50%; }
+.chart { position: relative; min-width: 0; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-3); }
+.chart .lbl { font-family: var(--font-body); font-size: 12px; font-weight: 600; fill: var(--ink); }
+.tip { position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; line-height: 1.45; box-shadow: 0 4px 14px rgb(0 0 0 / 0.12); min-width: 170px; z-index: 2; }
+.tip b { font-weight: 600; }
+.tip .row { display: flex; justify-content: space-between; gap: 14px; color: var(--ink-2); }
+.tip .row span:last-child { color: var(--ink); font-family: var(--font-mono); }
+.caption { font-size: 0.88rem; color: var(--ink-2); max-width: 80ch; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+.two > * { min-width: 0; }
+
+.flow { display: grid; gap: 14px; background: var(--surface); border-radius: 8px; padding: 22px; }
+.rowseq { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-family: var(--font-mono); font-size: 0.82rem; }
+.rowseq .lab { width: 92px; color: var(--ink-3); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.tok { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--rule); background: var(--bg); }
+.tok.seed { border-color: var(--ink-3); }
+.tok.noise { border-style: dashed; border-color: var(--accent); color: var(--accent); }
+.tok.ok { border-color: var(--good); color: var(--good); }
+.tok.no { opacity: 0.45; text-decoration: line-through; }
+.flow p { font-size: 0.9rem; color: var(--ink-2); }
+
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: right; padding: 9px 14px; border-bottom: 1px solid var(--rule); white-space: nowrap; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-weight: 600; color: var(--ink-2); font-size: 0.8rem; background: var(--surface); }
+tbody tr:last-child td { border-bottom: 0; }
+td.grp { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; background: var(--surface); text-align: left; }
+tr.hl td { font-weight: 600; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs button { font: inherit; font-size: 0.86rem; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink-2); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.diagram { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; padding: 12px; background: var(--bg); }
+.diagram svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.diagram text { fill: var(--ink); font-family: var(--font-body); font-size: 13px; }
+.diagram text.t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; fill: var(--ink-3); }
+.diagram text.b { font-weight: 600; }
+.diagram text.s { font-size: 11.5px; fill: var(--ink-2); }
+.diagram .m text, .diagram text.m { font-family: var(--font-mono); font-size: 11px; }
+.diagram text.acc, .diagram .m text.acc { fill: var(--accent); }
+.diagram text.okt { fill: var(--good); }
+.diagram .box, .diagram .chip { fill: var(--bg); stroke: var(--rule); stroke-width: 1.2; }
+.diagram .box.strong { fill: var(--surface); stroke: var(--ink-3); }
+.diagram .lora { stroke: var(--accent) !important; stroke-width: 1.6; }
+.diagram .nz { stroke: var(--accent); stroke-dasharray: 4 3; }
+.diagram .ok { stroke: var(--good); }
+.diagram .loss { fill: var(--surface); stroke: var(--series-2); stroke-width: 1.6; }
+.diagram .rej { opacity: 0.38; }
+.diagram .ar { fill: none; stroke: var(--ink-3); stroke-width: 1.4; }
+.diagram .ar.dash { stroke-dasharray: 4 3; }
+.diagram .ahd { fill: var(--ink-3); }
+.diagram .sep { stroke: var(--rule); stroke-width: 1; }
+ul.notes { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; color: var(--ink-2); max-width: 80ch; }
+ul.notes b { color: var(--ink); font-weight: 600; }
+.setup { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px 32px; font-size: 0.9rem; }
+.setup div { display: grid; gap: 2px; }
+.setup dt { font-family: var(--font-mono); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+.setup dd { margin: 0; }
+footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 18px; }
+@media (prefers-reduced-motion: no-preference) { .chart path.line { transition: opacity .2s; } }
+</style>
+</head>
+<body style="margin:0">
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Uno diffusion drafting · Nanbeige4.2-3B looped · Oct 2026</div>
+    <h1>LoopUno: Turning Agentic Looped LLMs into Diffusion LLMs <span>in One Hour</span></h1>
+    <p style="font-weight:600;margin:0">Longxuan Yu, Siheng Xiong</p>
+    <p class="lede">A gated LoRA, trained for 52 minutes on one 8×A100 node, teaches the looped Nanbeige4.2 agentic model to draft its own next tokens. It doubles tokens per forward, decodes 1.47× faster end to end, and keeps the output distribution exact.</p>
+    <div class="stats">
+      <div class="stat"><div class="v num">2.04<small>TPF</small></div><div class="k">Tokens per step at 52 min</div><div class="d">60 steps, 31M tokens, lr 1e-4. AR is 1.00.</div></div>
+      <div class="stat"><div class="v num">1.47<small>×</small></div><div class="k">End-to-end decode speed</div><div class="d">2274 vs 1545 tok/s on gsm8k, 8×A100.</div></div>
+      <div class="stat"><div class="v num">1.62<small>TPF</small></div><div class="k">After 8M tokens (14 min)</div><div class="d">Step 16. Already 1.13× faster end to end.</div></div>
+      <div class="stat"><div class="v num">96.0<small>%</small></div><div class="k">Accuracy, unchanged</div><div class="d">Lossless verify: AR 96.0%, Uno 93–96% across checkpoints (200-sample noise ±1.7%).</div></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="eyebrow">How it works</div>
+    <h2>The model drafts with noise and verifies with itself</h2>
+    <p class="prose">Uno keeps the base model frozen and adds one LoRA that is switched on only for noise positions. Each decode step drafts a block of 8 positions in one forward, then the unmodified model verifies them and keeps the longest correct prefix. The first position is always the exact AR token, so a step never moves backward.</p>
+    <div class="diagram" role="img" aria-label="Method diagram: training by self-distillation, and draft-then-verify inference">
+      <svg viewBox="0 0 980 430" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ahd"/></marker></defs>
+        <text class="t" x="20" y="26">TRAINING · ONE HOUR ON 8×A100</text>
+        <text class="t" x="520" y="26">INFERENCE · EVERY DECODE STEP</text>
+        <line x1="480" y1="14" x2="480" y2="416" class="sep"/>
+
+        <rect class="box" x="20" y="44" width="420" height="40" rx="6"/>
+        <text class="m" x="230" y="69" text-anchor="middle">training response   x₁ x₂ x₃ … x₄₀₉₆</text>
+        <path class="ar" d="M120 84V114" marker-end="url(#ah)"/><path class="ar" d="M340 84V114" marker-end="url(#ah)"/>
+        <rect class="box" x="20" y="116" width="200" height="40" rx="6"/>
+        <text class="b" x="120" y="141" text-anchor="middle">clean copy</text>
+        <rect class="box nz" x="240" y="116" width="200" height="40" rx="6"/>
+        <text class="b acc" x="340" y="141" text-anchor="middle">noised copy (blocks of 8)</text>
+        <path class="ar" d="M120 156V184" marker-end="url(#ah)"/><path class="ar" d="M340 156V184" marker-end="url(#ah)"/>
+        <rect class="box strong" x="20" y="186" width="200" height="62" rx="6"/>
+        <text class="b" x="120" y="211" text-anchor="middle">Nanbeige4.2 · frozen</text>
+        <text class="s" x="120" y="232" text-anchor="middle">22 layers × 2 loops</text>
+        <rect class="box strong lora" x="240" y="186" width="200" height="62" rx="6"/>
+        <text class="b" x="340" y="211" text-anchor="middle">Nanbeige4.2 · frozen</text>
+        <text class="s acc" x="340" y="232" text-anchor="middle">+ gated LoRA on noise rows</text>
+        <path class="ar" d="M120 248V276" marker-end="url(#ah)"/><path class="ar" d="M340 248V276" marker-end="url(#ah)"/>
+        <rect class="box" x="20" y="278" width="200" height="40" rx="6"/>
+        <text class="b" x="120" y="303" text-anchor="middle">teacher p(next token)</text>
+        <rect class="box" x="240" y="278" width="200" height="40" rx="6"/>
+        <text class="b" x="340" y="303" text-anchor="middle">student q(next token)</text>
+        <path class="ar" d="M120 318V336H200V350" marker-end="url(#ah)"/><path class="ar" d="M340 318V336H260V350" marker-end="url(#ah)"/>
+        <rect class="box loss" x="80" y="352" width="300" height="50" rx="6"/>
+        <text class="b" x="230" y="374" text-anchor="middle">loss = TV(p, q) = 1 − acceptance</text>
+        <text class="s" x="230" y="393" text-anchor="middle">no labels used · only the LoRA is updated</text>
+        <path class="ar dash" d="M380 377H458V217H446" marker-end="url(#ah)"/>
+
+        <text class="s" x="520" y="58">draft input</text>
+        <g class="m">
+          <rect class="chip" x="520" y="66" width="48" height="26" rx="4"/><text x="544" y="83" text-anchor="middle">seed</text>
+          <rect class="chip nz" x="574" y="66" width="48" height="26" rx="4"/><text class="acc" x="598" y="83" text-anchor="middle">?</text>
+          <rect class="chip nz" x="628" y="66" width="48" height="26" rx="4"/><text class="acc" x="652" y="83" text-anchor="middle">?</text>
+          <rect class="chip nz" x="682" y="66" width="48" height="26" rx="4"/><text class="acc" x="706" y="83" text-anchor="middle">?</text>
+          <rect class="chip nz" x="736" y="66" width="48" height="26" rx="4"/><text class="acc" x="760" y="83" text-anchor="middle">?</text>
+          <rect class="chip nz" x="790" y="66" width="48" height="26" rx="4"/><text class="acc" x="814" y="83" text-anchor="middle">?</text>
+          <rect class="chip nz" x="844" y="66" width="48" height="26" rx="4"/><text class="acc" x="868" y="83" text-anchor="middle">?</text>
+          <rect class="chip nz" x="898" y="66" width="48" height="26" rx="4"/><text class="acc" x="922" y="83" text-anchor="middle">?</text>
+        </g>
+        <path class="ar" d="M733 92V112" marker-end="url(#ah)"/>
+        <rect class="box strong lora" x="520" y="114" width="426" height="46" rx="6"/>
+        <text class="b" x="733" y="134" text-anchor="middle">draft pass: model + LoRA on noise rows</text>
+        <text class="s" x="733" y="151" text-anchor="middle">one forward fills all 8 positions</text>
+        <path class="ar" d="M733 160V180" marker-end="url(#ah)"/>
+        <text class="s" x="520" y="194">guesses</text>
+        <g class="m">
+          <rect class="chip" x="520" y="202" width="48" height="26" rx="4"/><text x="544" y="219" text-anchor="middle">The</text>
+          <rect class="chip" x="574" y="202" width="48" height="26" rx="4"/><text x="598" y="219" text-anchor="middle">total</text>
+          <rect class="chip" x="628" y="202" width="48" height="26" rx="4"/><text x="652" y="219" text-anchor="middle">is</text>
+          <rect class="chip" x="682" y="202" width="48" height="26" rx="4"/><text x="706" y="219" text-anchor="middle">12</text>
+          <rect class="chip" x="736" y="202" width="48" height="26" rx="4"/><text x="760" y="219" text-anchor="middle">apple</text>
+          <rect class="chip" x="790" y="202" width="48" height="26" rx="4"/><text x="814" y="219" text-anchor="middle">,</text>
+          <rect class="chip" x="844" y="202" width="48" height="26" rx="4"/><text x="868" y="219" text-anchor="middle">so</text>
+          <rect class="chip" x="898" y="202" width="48" height="26" rx="4"/><text x="922" y="219" text-anchor="middle">each</text>
+        </g>
+        <path class="ar" d="M733 228V248" marker-end="url(#ah)"/>
+        <rect class="box strong" x="520" y="250" width="426" height="46" rx="6"/>
+        <text class="b" x="733" y="270" text-anchor="middle">verify pass: original model, no LoRA</text>
+        <text class="s" x="733" y="287" text-anchor="middle">checks all 8 guesses in one forward</text>
+        <path class="ar" d="M733 296V316" marker-end="url(#ah)"/>
+        <text class="s" x="520" y="330">output</text>
+        <g class="m">
+          <rect class="chip ok" x="520" y="338" width="48" height="26" rx="4"/><text class="okt" x="544" y="355" text-anchor="middle">The</text>
+          <rect class="chip ok" x="574" y="338" width="48" height="26" rx="4"/><text class="okt" x="598" y="355" text-anchor="middle">total</text>
+          <g class="rej">
+            <rect class="chip" x="628" y="338" width="48" height="26" rx="4"/><text x="652" y="355" text-anchor="middle">is</text>
+            <rect class="chip" x="682" y="338" width="48" height="26" rx="4"/><text x="706" y="355" text-anchor="middle">12</text>
+            <rect class="chip" x="736" y="338" width="48" height="26" rx="4"/><text x="760" y="355" text-anchor="middle">apple</text>
+            <rect class="chip" x="790" y="338" width="48" height="26" rx="4"/><text x="814" y="355" text-anchor="middle">,</text>
+            <rect class="chip" x="844" y="338" width="48" height="26" rx="4"/><text x="868" y="355" text-anchor="middle">so</text>
+            <rect class="chip" x="898" y="338" width="48" height="26" rx="4"/><text x="922" y="355" text-anchor="middle">each</text>
+          </g>
+        </g>
+        <text class="s" x="520" y="392">keep the longest prefix the original model agrees with: 2.04 tokens per step on average,</text>
+        <text class="s" x="520" y="409">and the output distribution is exactly the original model's</text>
+        <path class="ar dash" d="M946 351H964V79H950" marker-end="url(#ah)"/>
+        <text class="s" x="958" y="225" text-anchor="middle" transform="rotate(90 958 225)">next step</text>
+      </svg>
+    </div>
+    <div class="two">
+      <div class="prose" style="display:grid;gap:10px">
+        <h3>Training is self-distillation</h3>
+        <p>Each sequence appears twice in one batch: a clean copy (frozen model, the teacher) and a block-noised copy (model + LoRA, the student). The loss is the total-variation distance between the two next-token distributions on the response tokens. Acceptance probability under lossless verification is exactly 1 − TV, so the loss trains the quantity decoding cares about. Dataset labels are never used; the data only supplies realistic contexts.</p>
+      </div>
+      <div class="prose" style="display:grid;gap:10px">
+        <h3>Why the looped model fits</h3>
+        <p>Nanbeige4.2-3B runs its 22 layers twice per token. At decode time it reads weights like a ~6.3B model, so it costs as much per step as Qwen3-8B (28.8 ms each). Drafting more tokens per step is where a looped model gains the most, and the LoRA trains through both loops with no change to the recipe beyond ZeRO-0 for the shared weights.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Scaling with training</div>
+    <h2>Tokens per step vs. training time</h2>
+    <div class="chart-card">
+      <div class="chart-head">
+        <p class="caption">gsm8k (first 200 problems), block 8, temperature 1.0. One step = 0.52M tokens ≈ 52 s on 8×A100. Hover a point for details.</p>
+        <div class="legend"><span><i style="background:var(--accent)"></i>lr 1e-4</span><span><i style="background:var(--series-2)"></i>lr 1e-5 (official lr)</span><span><i class="dash"></i>references</span></div>
+      </div>
+      <div class="chart" id="c-tpf"></div>
+      <p class="caption">With lr 1e-4 most of the gain arrives in the first hour: TPF 2.04 at 52 min, then 2.18 after 3.5 h. lr 1e-5 needs ~4 h to reach the same point. Both curves flatten near 2.1–2.2, which is a per-position acceptance of about 0.54 (Qwen3-8B Uno reaches 0.64 after 14.7B tokens).</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Speedup</div>
+    <h2>Measured end-to-end speedup vs. training time</h2>
+    <div class="chart-card">
+      <div class="chart-head">
+        <p class="caption">lr 1e-4 run. Measured: output tok/s ÷ AR tok/s on the same 200 problems. Per-step: TPF ÷ 1.29, the measured cost of one Uno step relative to one AR step.</p>
+        <div class="legend"><span><i class="dot" style="background:var(--accent)"></i>measured end to end</span><span><i style="background:var(--series-2)"></i>per-step estimate</span><span><i class="dash"></i>AR = 1×</span></div>
+      </div>
+      <div class="chart" id="c-speed"></div>
+      <p class="caption">Uno pays for itself once TPF passes ~1.3. From one hour on, decoding is 1.4–1.5× faster end to end. The gap to the per-step estimate (~1.6–1.7×) comes from the long tail of each batch, when a few long sequences keep the GPUs underfilled; single 200-problem timings vary by about ±10%.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Step cost</div>
+    <h2>One Uno step costs 1.29 AR steps</h2>
+    <div class="two">
+      <div class="tbl">
+        <table>
+          <thead><tr><th>1 GPU, 4 sequences, T=1.0</th><th>AR step</th><th>Uno step</th><th>Cost</th><th>TPF</th></tr></thead>
+          <tbody>
+            <tr><td>Qwen3-8B, block 16</td><td>28.9 ms</td><td>35.8 ms</td><td>1.24×</td><td>2.66</td></tr>
+            <tr class="hl"><td>Nanbeige4.2-3B looped, block 8</td><td>28.8 ms</td><td>37.1 ms</td><td>1.29×</td><td>1.79</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Nanbeige, greedy</th><th>Eager</th><th>CUDA graph</th><th>Graph hits</th></tr></thead>
+          <tbody>
+            <tr><td>AR, block 1</td><td>97.1 ms</td><td>27.1 ms</td><td>100%</td></tr>
+            <tr><td>Uno, block 8</td><td>161.3 ms</td><td>31.2 ms</td><td>100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="caption">Decoding at small batch is bound by weight reads, so drafting 8 rows costs little more than 1. CUDA graphs are on in every evaluation; without them the draft rows would cost 1.66× instead of 1.15× (greedy).</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">All runs</div>
+    <h2>Experiment data</h2>
+    <div class="tabs" role="tablist" aria-label="Run">
+      <button id="t-1e4" role="tab" aria-selected="true" data-k="1e4">lr 1e-4</button>
+      <button id="t-1e5" role="tab" aria-selected="false" data-k="1e5">lr 1e-5</button>
+      <button id="t-qwen" role="tab" aria-selected="false" data-k="qwen">Qwen3-8B references</button>
+    </div>
+    <div class="tbl"><table id="runs"></table></div>
+    <p class="caption">gsm8k first 200 problems, 1 sample each, temperature 1.0, top-p 0.95, max 8192 output tokens, 8×A100-40GB with data parallel 8. Training time is wall clock on one 8×A100 node, including the warm-started continuation runs.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Setup</div>
+    <h2>Recipe</h2>
+    <dl class="setup">
+      <div><dt>Base model</dt><dd>Nanbeige4.2-3B, 22 layers × 2 loops, frozen</dd></div>
+      <div><dt>Adapter</dt><dd>Gated LoRA r=128, α=2048, all 7 projections, noise rows only</dd></div>
+      <div><dt>Objective</dt><dd>TV distance to the frozen model's own distribution (self-distillation)</dd></div>
+      <div><dt>Data</dt><dd>60k OpenThoughts3 prompts with responses, 4096-token cutoff</dd></div>
+      <div><dt>Batch</dt><dd>128 × 4096 = 0.52M tokens per step, block size 8</dd></div>
+      <div><dt>Optimizer</dt><dd>lr 1e-4 constant after 3 warmup steps, ZeRO-0 (loops share weights)</dd></div>
+      <div><dt>Hardware</dt><dd>1 × p4d (8 × A100-40GB), ~52 s per step</dd></div>
+      <div><dt>Inference</dt><dd>nano-vllm Uno decoder, linear draft/verify, FA2, CUDA graphs</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <div class="eyebrow">Limits and next steps</div>
+    <h2>What this does not show yet</h2>
+    <ul class="notes">
+      <li><b>Benchmark scope.</b> All numbers are from gsm8k math reasoning. Agentic and tool-use traces are the next evaluation.</li>
+      <li><b>Sample size.</b> 200 problems per point; full 1319-problem runs will tighten the end-to-end timings.</li>
+      <li><b>The plateau.</b> TPF stops near 2.2. The training data was written by other models, while the drafter is scored against Nanbeige's own continuations; training on Nanbeige's self-generated responses is the first fix to test.</li>
+      <li><b>Cheaper drafts.</b> Drafting with one loop instead of two halves the draft cost; a LoRA fine-tuned for layer skipping already recovered Qwen3-8B from TPF 1.43 to 2.22 in 60 steps.</li>
+    </ul>
+  </section>
+
+  <footer>Uno: "Unlocking Lossless Speedups in LLMs via Discrete Diffusion" (arXiv 2609.04010). Experiments run on the agent-core HyperPod cluster, Oct 24–25 2026.</footer>
+</div>
+
+<script>
+const AR_TPS = 1545, STEP_S = 52.3, STEP_COST = 1.29;
+const R = {
+  "1e4": [[8,1.398,.96,1413],[16,1.623,.945,1753],[32,1.882,.95,1795],[60,2.037,.93,2274],[90,2.067,.94,2092],[120,2.115,.945,2217],[180,2.156,.945,2195],[240,2.179,.96,2234]],
+  "1e5": [[4,1.112,.96,1129],[8,1.192,.95,1052],[16,1.323,.94,1125],[32,1.555,.945,1584],[60,1.753,.94,1573],[100,1.873,.955,2085],[140,1.942,.935,2284],[180,1.99,.96,1933],[220,2.032,.945,2125],[260,2.039,.96,1955],[300,2.05,.95,1678]]
+};
+const mins = s => s * STEP_S / 60;
+const fmtTime = s => { const m = Math.round(mins(s)); return m < 60 ? m + " min" : (m / 60).toFixed(1) + " h"; };
+const toPts = (k, f) => [{x: 0, y: f === "tpf" ? 1 : 1, meta: {step: 0}}].concat(R[k].map(r => ({x: mins(r[0]), y: f(r), meta: {step: r[0], tpf: r[1], acc: r[2], tps: r[3]}})));
+
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function lineChart(el, cfg) {
+  function draw() {
+    const W = Math.max(300, el.clientWidth), H = W < 520 ? 260 : 320;
+    const m = {l: 44, r: W < 520 ? 70 : 110, t: 14, b: 40};
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const [x0, x1] = cfg.x, [y0, y1] = cfg.y;
+    const sx = v => m.l + (v - x0) / (x1 - x0) * iw, sy = v => m.t + ih - (v - y0) / (y1 - y0) * ih;
+    const ns = "http://www.w3.org/2000/svg";
+    let s = `<svg xmlns="${ns}" width="${W}" height="${H}" role="img" aria-label="${cfg.aria}">`;
+    cfg.yTicks.forEach(t => { s += `<line x1="${m.l}" x2="${m.l + iw}" y1="${sy(t)}" y2="${sy(t)}" stroke="${css("--rule")}" stroke-width="1"/><text x="${m.l - 8}" y="${sy(t) + 4}" text-anchor="end">${cfg.yFmt(t)}</text>`; });
+    cfg.xTicks.forEach(t => { s += `<text x="${sx(t)}" y="${m.t + ih + 20}" text-anchor="middle">${t < 60 ? t + "m" : (t / 60) + "h"}</text>`; });
+    s += `<text x="${m.l + iw / 2}" y="${H - 4}" text-anchor="middle">training time on one 8×A100 node</text>`;
+    (cfg.refs || []).forEach(r => { s += `<line x1="${m.l}" x2="${m.l + iw}" y1="${sy(r.y)}" y2="${sy(r.y)}" stroke="${css("--ref")}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${m.l + iw + 6}" y="${sy(r.y) + 4}">${r.label}</text>`; });
+    if (cfg.vref) { const x = sx(cfg.vref.x); s += `<line x1="${x}" x2="${x}" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--ref")}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${x + 6}" y="${m.t + 12}">${cfg.vref.label}</text>`; }
+    const all = [];
+    cfg.series.forEach(se => {
+      const col = css(se.color);
+      if (se.line !== false) s += `<path class="line" d="${se.pts.map((p, i) => (i ? "L" : "M") + sx(p.x).toFixed(1) + "," + sy(p.y).toFixed(1)).join("")}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      se.pts.forEach(p => { if (p.meta.step === 0 && se.skip0) return; all.push({p, se, cx: sx(p.x), cy: sy(p.y), col}); s += `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="${se.r || 4}" fill="${col}" stroke="${css("--bg")}" stroke-width="2"/>`; });
+      const last = se.pts[se.pts.length - 1];
+      if (se.endLabel) s += `<text class="lbl" x="${sx(last.x) + 9}" y="${sy(last.y) + (se.dy || 4)}">${se.endLabel}</text>`;
+    });
+    s += `<circle id="hov" r="7" fill="none" stroke-width="2" visibility="hidden"/>`;
+    s += `<rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" id="hit"/></svg>`;
+    el.innerHTML = s + `<div class="tip" hidden></div>`;
+    const svg = el.querySelector("svg"), tip = el.querySelector(".tip"), hov = el.querySelector("#hov");
+    function move(ev) {
+      const b = svg.getBoundingClientRect(), mx = ev.clientX - b.left, my = ev.clientY - b.top;
+      let best = null, bd = Infinity;
+      all.forEach(a => { const d = Math.hypot(a.cx - mx, a.cy - my); if (d < bd) { bd = d; best = a; } });
+      if (!best || bd > 60) { tip.hidden = true; hov.setAttribute("visibility", "hidden"); return; }
+      hov.setAttribute("cx", best.cx); hov.setAttribute("cy", best.cy); hov.setAttribute("stroke", best.col); hov.setAttribute("visibility", "visible");
+      tip.innerHTML = cfg.tip(best.p, best.se); tip.hidden = false;
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let left = best.cx + 14; if (left + tw > W) left = best.cx - tw - 14;
+      tip.style.left = Math.max(0, left) + "px"; tip.style.top = Math.max(0, Math.min(H - th, best.cy - th / 2)) + "px";
+    }
+    svg.addEventListener("pointermove", move);
+    svg.addEventListener("pointerleave", () => { tip.hidden = true; hov.setAttribute("visibility", "hidden"); });
+  }
+  draw();
+  let t; new ResizeObserver(() => { clearTimeout(t); t = setTimeout(draw, 80); }).observe(el);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+  new MutationObserver(draw).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+}
+
+const row = (k, v) => `<div class="row"><span>${k}</span><span>${v}</span></div>`;
+function tipBody(p, se) {
+  if (p.meta.step === 0) return `<b>${se.name}</b>${row("step", "0 (AR)")}${row("TPF", "1.00")}`;
+  const mm = p.meta;
+  return `<b>${se.name} · step ${mm.step}</b>` + row("trained", fmtTime(mm.step)) + row("tokens", (mm.step * 0.524).toFixed(0) + "M") +
+    row("TPF", mm.tpf.toFixed(2)) + row("tok/s", mm.tps) + row("vs AR", (mm.tps / AR_TPS).toFixed(2) + "×") + row("accuracy", (mm.acc * 100).toFixed(1) + "%");
+}
+
+lineChart(document.getElementById("c-tpf"), {
+  aria: "Tokens per step versus training time for two learning rates",
+  x: [0, 270], y: [0.8, 3.0], xTicks: [0, 30, 60, 120, 180, 240], yTicks: [1, 1.5, 2, 2.5, 3], yFmt: t => t.toFixed(1),
+  refs: [{y: 1, label: "AR 1.0"}, {y: 2.79, label: "Qwen3-8B 2.79"}], vref: {x: 60, label: "1 hour"},
+  series: [
+    {name: "lr 1e-5", color: "--series-2", pts: toPts("1e5", r => r[1]), endLabel: "lr 1e-5", dy: 14},
+    {name: "lr 1e-4", color: "--accent", pts: toPts("1e4", r => r[1]), endLabel: "lr 1e-4", dy: -4}
+  ],
+  tip: tipBody
+});
+
+lineChart(document.getElementById("c-speed"), {
+  aria: "End-to-end and per-step speedup versus training time",
+  x: [0, 220], y: [0.6, 2.0], xTicks: [0, 30, 60, 120, 180], yTicks: [0.75, 1, 1.25, 1.5, 1.75, 2], yFmt: t => t.toFixed(2) + "×",
+  refs: [{y: 1, label: "AR 1×"}], vref: {x: 60, label: "1 hour"},
+  series: [
+    {name: "per-step estimate", color: "--series-2", skip0: true, pts: [{x: 0, y: 1 / STEP_COST, meta: {step: 0}}].concat(R["1e4"].map(r => ({x: mins(r[0]), y: r[1] / STEP_COST, meta: {step: r[0], tpf: r[1], acc: r[2], tps: r[3]}}))), endLabel: "per step", dy: -4, r: 3},
+    {name: "measured", color: "--accent", line: false, skip0: true, pts: R["1e4"].map(r => ({x: mins(r[0]), y: r[3] / AR_TPS, meta: {step: r[0], tpf: r[1], acc: r[2], tps: r[3]}})), endLabel: "measured", dy: 16, r: 5}
+  ],
+  tip: (p, se) => tipBody(p, se) + (se.name === "per-step estimate" ? row("estimate", (p.meta.tpf / STEP_COST).toFixed(2) + "×") : "")
+});
+
+const QW = `<thead><tr><th>Qwen3-8B (reference)</th><th>Block</th><th>TPF</th><th>tok/s</th><th>Speedup</th><th>Accuracy</th></tr></thead><tbody>
+<tr><td class="grp" colspan="6">Uno release adapter, full gsm8k (1319)</td></tr>
+<tr><td>AR</td><td>1</td><td>1.00</td><td>1708</td><td>1.00×</td><td>95.6%</td></tr>
+<tr class="hl"><td>Uno (14.7B training tokens)</td><td>16</td><td>2.79</td><td>3728</td><td>2.18×</td><td>95.8%</td></tr>
+<tr><td class="grp" colspan="6">Draft-layer skip, first 200 problems</td></tr>
+<tr><td>No skip</td><td>16</td><td>2.77</td><td>3061</td><td>–</td><td>96.5%</td></tr>
+<tr><td>Skip layers 4–11, no training</td><td>16</td><td>2.44</td><td>2713</td><td>–</td><td>97.0%</td></tr>
+<tr><td>Skip layers 32–35, no training</td><td>16</td><td>1.43</td><td>1420</td><td>–</td><td>95.5%</td></tr>
+<tr><td>Skip 32–35, LoRA fine-tuned 20 steps</td><td>16</td><td>2.06</td><td>2455</td><td>–</td><td>96.0%</td></tr>
+<tr><td>Skip 32–35, LoRA fine-tuned 60 steps</td><td>16</td><td>2.22</td><td>2381</td><td>–</td><td>95.5%</td></tr></tbody>`;
+
+function renderTable(k) {
+  const t = document.getElementById("runs");
+  if (k === "qwen") { t.innerHTML = QW; return; }
+  let h = `<thead><tr><th>Checkpoint</th><th>Trained</th><th>Tokens</th><th>TPF</th><th>tok/s</th><th>vs AR</th><th>Accuracy</th></tr></thead><tbody>`;
+  h += `<tr><td>AR baseline</td><td>–</td><td>–</td><td>1.00</td><td>${AR_TPS}</td><td>1.00×</td><td>96.0%</td></tr>`;
+  R[k].forEach(r => {
+    h += `<tr${r[0] === 60 ? ' class="hl"' : ""}><td>step ${r[0]}</td><td>${fmtTime(r[0])}</td><td>${(r[0] * 0.524).toFixed(0)}M</td><td>${r[1].toFixed(2)}</td><td>${r[3]}</td><td>${(r[3] / AR_TPS).toFixed(2)}×</td><td>${(r[2] * 100).toFixed(1)}%</td></tr>`;
+  });
+  t.innerHTML = h + "</tbody>";
+}
+const tabs = document.querySelectorAll(".tabs button");
+tabs.forEach(b => b.addEventListener("click", () => { tabs.forEach(x => x.setAttribute("aria-selected", x === b)); renderTable(b.dataset.k); }));
+renderTable("1e4");
+</script>
+</body>
+</html>
