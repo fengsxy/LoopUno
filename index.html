@@ -319,7 +319,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
       <div><dt>Data</dt><dd>60k OpenThoughts3 prompts with responses, 4096-token cutoff</dd></div>
       <div><dt>Batch</dt><dd>128 × 4096 = 0.52M tokens per step, block size 8</dd></div>
       <div><dt>Optimizer</dt><dd>lr 1e-4 constant after 3 warmup steps, ZeRO-0 (loops share weights)</dd></div>
-      <div><dt>Hardware</dt><dd>1 × p4d (8 × A100-40GB), ~52 s per step</dd></div>
+      <div><dt>Hardware</dt><dd>8 × A100 40G</dd></div>
       <div><dt>Inference</dt><dd>nano-vllm Uno decoder, linear draft/verify, FA2, CUDA graphs</dd></div>
     </dl>
   </section>
