@@ -26,15 +26,6 @@ speedup, step cost and all runs.
 | BFCL v3 function calling (1000, greedy) | 1653 | 3273 (**1.98×**, TPF 2.34) | 3464 (2.10×, TPF 2.58) | 87.2% / 87.5% |
 | SWE-agent trajectory replay (300, T=1.0) | 538 | 848 (**1.58×**, TPF 2.06) | 871 (1.62×, TPF 2.34) | speed only |
 
-## Citation
+## Acknowledgements
 
-This work builds on Uno:
-
-```bibtex
-@article{sahoo2026uno,
-  title   = {Unlocking Lossless Speedups in LLMs via Discrete Diffusion},
-  author  = {Sahoo, Subham Sekhar and Chen, Lingjie and Pham, Khiem and Geuter, Jonathan and Dwivedi, Chaitanya and Pimpalkhute, Varad and Akhauri, Yash and Moreno, Alexander and Yurochkin, Mikhail and Wang, Zhenting and Elhoushi, Mostafa and Dey, Nolan and Bergsma, Shane and Hestness, Joel and Thickstun, John and Xing, Eric and Liu, Zhengzhong},
-  journal = {arXiv preprint arXiv:2609.04010},
-  year    = {2026}
-}
-```
+LoopUno builds on Uno ([Sahoo et al., 2026](https://arxiv.org/abs/2609.04010)) and its code ([ifm-ai/uno](https://github.com/ifm-ai/uno)), applied to Nanbeige4.2-3B ([Nanbeige LLM Lab, 2026](https://arxiv.org/abs/2607.22083); [weights](https://huggingface.co/Nanbeige/Nanbeige4.2-3B)).

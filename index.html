@@ -120,7 +120,12 @@ tr.hl td { font-weight: 600; }
 .diagram .ar.dash { stroke-dasharray: 4 3; }
 .diagram .ahd { fill: var(--ink-3); }
 .diagram .sep { stroke: var(--rule); stroke-width: 1; }
-.bib { margin: 0; overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.55; color: var(--ink-2); white-space: pre; }
+.reflist { margin: 0; padding-left: 1.6em; display: grid; gap: 6px; font-size: 0.88rem; color: var(--ink-2); max-width: 80ch; }
+.reflist li::marker { content: "[" counter(list-item) "]  "; color: var(--ink-3); font-family: var(--font-mono); font-size: 0.8rem; }
+.reflist a, a.cite { color: var(--accent); text-decoration: none; }
+.reflist li:target { color: var(--ink); }
+.refs h2 { font-size: 1.1rem; }
+.refs { gap: 10px; }
 ul.notes { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; color: var(--ink-2); max-width: 80ch; }
 ul.notes b { color: var(--ink); font-weight: 600; }
 .setup { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px 32px; font-size: 0.9rem; }
@@ -150,7 +155,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
   <section>
     <div class="eyebrow">How it works</div>
     <h2>The model drafts with noise and verifies with itself</h2>
-    <p class="prose">Uno keeps the base model frozen and adds one LoRA that is switched on only for noise positions. Each decode step drafts a block of 8 positions in one forward, then the unmodified model verifies them and keeps the longest correct prefix. The first position is always the exact AR token, so a step never moves backward.</p>
+    <p class="prose">Uno <a class="cite" href="#ref-uno">[1]</a> keeps the base model frozen and adds one LoRA that is switched on only for noise positions. Each decode step drafts a block of 8 positions in one forward, then the unmodified model verifies them and keeps the longest correct prefix. The first position is always the exact AR token, so a step never moves backward.</p>
     <div class="diagram" role="img" aria-label="Method diagram: training by self-distillation, and draft-then-verify inference">
       <svg viewBox="0 0 980 430" xmlns="http://www.w3.org/2000/svg">
         <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ahd"/></marker></defs>
@@ -241,7 +246,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
       </div>
       <div class="prose" style="display:grid;gap:10px">
         <h3>Why the looped model fits</h3>
-        <p>Nanbeige4.2-3B runs its 22 layers twice per token. At decode time it reads weights like a ~6.3B model, so it costs as much per step as Qwen3-8B (28.8 ms each). Drafting more tokens per step is where a looped model gains the most, and the LoRA trains through both loops with no change to the recipe beyond ZeRO-0 for the shared weights.</p>
+        <p>Nanbeige4.2-3B <a class="cite" href="#ref-nanbeige">[2]</a> runs its 22 layers twice per token. At decode time it reads weights like a ~6.3B model, so it costs as much per step as Qwen3-8B (28.8 ms each). Drafting more tokens per step is where a looped model gains the most, and the LoRA trains through both loops with no change to the recipe beyond ZeRO-0 for the shared weights.</p>
       </div>
     </div>
   </section>
@@ -363,19 +368,15 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
     </ul>
   </section>
 
-  <section>
-    <div class="eyebrow">References</div>
+  <section class="refs">
     <h2>References</h2>
-    <p class="prose">Subham Sekhar Sahoo, Lingjie Chen, Khiem Pham, Jonathan Geuter, Chaitanya Dwivedi, Varad Pimpalkhute, Yash Akhauri, Alexander Moreno, Mikhail Yurochkin, Zhenting Wang, Mostafa Elhoushi, Nolan Dey, Shane Bergsma, Joel Hestness, John Thickstun, Eric Xing, Zhengzhong Liu. <i>Unlocking Lossless Speedups in LLMs via Discrete Diffusion.</i> arXiv:2609.04010, 2026. <a href="https://arxiv.org/abs/2609.04010" style="color:var(--accent)">arxiv.org/abs/2609.04010</a></p>
-    <pre class="bib">@article{sahoo2026uno,
-  title   = {Unlocking Lossless Speedups in LLMs via Discrete Diffusion},
-  author  = {Sahoo, Subham Sekhar and Chen, Lingjie and Pham, Khiem and Geuter, Jonathan and Dwivedi, Chaitanya and Pimpalkhute, Varad and Akhauri, Yash and Moreno, Alexander and Yurochkin, Mikhail and Wang, Zhenting and Elhoushi, Mostafa and Dey, Nolan and Bergsma, Shane and Hestness, Joel and Thickstun, John and Xing, Eric and Liu, Zhengzhong},
-  journal = {arXiv preprint arXiv:2609.04010},
-  year    = {2026}
-}</pre>
+    <ol class="reflist">
+      <li id="ref-uno">Subham Sekhar Sahoo, Lingjie Chen, Khiem Pham, et al. Unlocking Lossless Speedups in LLMs via Discrete Diffusion. <i>arXiv:2609.04010</i>, 2026. <a href="https://arxiv.org/abs/2609.04010">arxiv.org/abs/2609.04010</a></li>
+      <li id="ref-nanbeige">Nanbeige LLM Lab. Nanbeige4.2-3B: Unlocking Agentic Capabilities in a Compact Model. <i>arXiv:2607.22083</i>, 2026. <a href="https://arxiv.org/abs/2607.22083">arxiv.org/abs/2607.22083</a></li>
+    </ol>
   </section>
 
-  <footer>Uno: "Unlocking Lossless Speedups in LLMs via Discrete Diffusion" (arXiv 2609.04010). Experiments run on the agent-core HyperPod cluster, Oct 24–25 2026.</footer>
+  <footer>LoopUno · October 2026</footer>
 </div>
 
 <script>
