@@ -1,6 +1,6 @@
 # LoopUno: Turning Agentic Looped LLMs into Diffusion LLMs in One Hour
 
-Longxuan Yu, Siheng Xiong
+Longxuan Yu (University of California, Riverside), Siheng Xiong (Georgia Institute of Technology)
 
 A gated LoRA trained for 52 minutes on one 8×A100 node teaches the looped agentic model
 Nanbeige4.2-3B (22 layers × 2 loops) to draft its own next tokens with
