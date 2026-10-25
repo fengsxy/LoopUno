@@ -2,6 +2,8 @@
 
 Longxuan Yu (University of California, Riverside), Siheng Xiong (Georgia Institute of Technology)
 
+Adapters: https://huggingface.co/liddlefish/LoopUno-Nanbeige4.2-3B · Results page: https://fengsxy.github.io/LoopUno/
+
 A gated LoRA trained for 52 minutes on one 8×A100 node teaches the looped agentic model
 Nanbeige4.2-3B (22 layers × 2 loops) to draft its own next tokens with
 [Uno](https://arxiv.org/abs/2609.04010)-style discrete diffusion, then verify them losslessly.
