@@ -1,0 +1,10 @@
+# LoopUno one-hour run: block size 8, 60 steps of 128 x 4096 tokens (~31M tokens).
+version: 1
+tokens_per_step: 524288
+sequence_length: 4096
+global_batch_size: 128
+total_tokens: 31457280
+seed: 20261024
+stages:
+  - block_size: 8
+    tokens: 31457280

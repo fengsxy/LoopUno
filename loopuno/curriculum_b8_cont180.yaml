@@ -1,0 +1,10 @@
+# Continuation: 180 more block-8 steps from a step-60 adapter (pass it with INIT); new seed, unseen data order.
+version: 1
+tokens_per_step: 524288
+sequence_length: 4096
+global_batch_size: 128
+total_tokens: 94371840
+seed: 20261026
+stages:
+  - block_size: 8
+    tokens: 94371840
