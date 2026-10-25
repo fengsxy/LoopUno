@@ -17,5 +17,11 @@ gsm8k first 200 problems, temperature 1.0, block size 8, 8×A100-40GB. Verificat
 so accuracy differences are sampling noise (±1.7% at n=200).
 
 Open `index.html` for the full results page: method diagram, scaling with training time,
-speedup, step cost and all runs. Agentic evaluations (BFCL function calling and SWE-agent
-trajectory replay) are in progress.
+speedup, step cost and all runs.
+
+## Agentic tasks
+
+| Task | AR tok/s | Uno step 60 (52 min) | Uno step 240 (3.5 h) | Accuracy AR / Uno |
+|---|---|---|---|---|
+| BFCL v3 function calling (1000, greedy) | 1653 | 3273 (**1.98×**, TPF 2.34) | 3464 (2.10×, TPF 2.58) | 87.2% / 87.5% |
+| SWE-agent trajectory replay (300, T=1.0) | 538 | 848 (**1.58×**, TPF 2.06) | 871 (1.62×, TPF 2.34) | speed only |

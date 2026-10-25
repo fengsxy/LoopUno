@@ -137,7 +137,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
     <div class="eyebrow">Uno diffusion drafting · Nanbeige4.2-3B looped · Oct 2026</div>
     <h1>LoopUno: Turning Agentic Looped LLMs into Diffusion LLMs <span>in One Hour</span></h1>
     <p style="margin:0;display:grid;gap:2px"><span style="font-weight:600">Longxuan Yu<sup>1</sup>, Siheng Xiong<sup>2</sup></span><span style="color:var(--ink-3);font-size:0.9rem"><sup>1</sup>University of California, Riverside &nbsp;·&nbsp; <sup>2</sup>Georgia Institute of Technology</span></p>
-    <p class="lede">A gated LoRA, trained for 52 minutes on one 8×A100 node, teaches the looped Nanbeige4.2 agentic model to draft its own next tokens. It doubles tokens per forward, decodes 1.47× faster end to end, and keeps the output distribution exact.</p>
+    <p class="lede">A gated LoRA, trained for 52 minutes on one 8×A100 node, teaches the looped Nanbeige4.2 agentic model to draft its own next tokens. It doubles tokens per forward, decodes function calls 1.98× faster and math reasoning 1.47× faster end to end, and keeps the output distribution exact.</p>
     <div class="stats">
       <div class="stat"><div class="v num">2.04<small>TPF</small></div><div class="k">Tokens per step at 52 min</div><div class="d">60 steps, 31M tokens, lr 1e-4. AR is 1.00.</div></div>
       <div class="stat"><div class="v num">1.47<small>×</small></div><div class="k">End-to-end decode speed</div><div class="d">2274 vs 1545 tok/s on gsm8k, 8×A100.</div></div>
@@ -272,6 +272,33 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
   </section>
 
   <section>
+    <div class="eyebrow">Agentic tasks</div>
+    <h2>Function calling decodes 2× faster after one hour</h2>
+    <p class="prose">The same adapters, trained only on math and reasoning data, transfer to agentic outputs. Tool calls are highly structured, so the drafter guesses them more often than free-form reasoning.</p>
+    <div class="stats">
+      <div class="stat"><div class="v num">1.98<small>×</small></div><div class="k">BFCL, one hour of training</div><div class="d">3273 vs 1653 tok/s, TPF 2.34. 2.10× after 3.5 h.</div></div>
+      <div class="stat"><div class="v num">1.58<small>×</small></div><div class="k">SWE-agent trajectory replay</div><div class="d">848 vs 538 tok/s, TPF 2.06. 1.62× after 3.5 h.</div></div>
+      <div class="stat"><div class="v num">87.5<small>%</small></div><div class="k">BFCL accuracy, unchanged</div><div class="d">AR 87.2% under greedy decoding.</div></div>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Task</th><th>Decoder</th><th>Trained</th><th>TPF</th><th>tok/s</th><th>vs AR</th><th>Accuracy</th></tr></thead>
+        <tbody>
+          <tr><td class="grp" colspan="7">BFCL v3 function calling · simple, multiple, parallel, parallel-multiple · 1000 prompts · greedy</td></tr>
+          <tr><td>BFCL</td><td>AR</td><td>–</td><td>1.00</td><td>1653</td><td>1.00×</td><td>87.2%</td></tr>
+          <tr class="hl"><td>BFCL</td><td>Uno step 60</td><td>52 min</td><td>2.34</td><td>3273</td><td>1.98×</td><td>87.5%</td></tr>
+          <tr><td>BFCL</td><td>Uno step 240</td><td>3.5 h</td><td>2.58</td><td>3464</td><td>2.10×</td><td>87.5%</td></tr>
+          <tr><td class="grp" colspan="7">SWE-agent trajectory replay · next action from 300 cut trajectories · median prompt 6.4k tokens · T=1.0</td></tr>
+          <tr><td>SWE replay</td><td>AR</td><td>–</td><td>1.00</td><td>538</td><td>1.00×</td><td>–</td></tr>
+          <tr class="hl"><td>SWE replay</td><td>Uno step 60</td><td>52 min</td><td>2.06</td><td>848</td><td>1.58×</td><td>–</td></tr>
+          <tr><td>SWE replay</td><td>Uno step 240</td><td>3.5 h</td><td>2.34</td><td>871</td><td>1.62×</td><td>–</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">BFCL accuracy uses a simplified AST checker (function name, allowed argument values, one-to-one matching for parallel calls), applied identically to AR and Uno; absolute scores may differ from the official leaderboard. SWE replay takes the nebius/SWE-agent-trajectories dataset, cuts each trajectory at a random assistant turn and generates the next action without executing it, so it measures speed only. 7×A100, adapters from the lr 1e-4 run.</p>
+  </section>
+
+  <section>
     <div class="eyebrow">Step cost</div>
     <h2>One Uno step costs 1.29 AR steps</h2>
     <div class="two">
@@ -328,7 +355,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
     <div class="eyebrow">Limits and next steps</div>
     <h2>What this does not show yet</h2>
     <ul class="notes">
-      <li><b>Benchmark scope.</b> All numbers are from gsm8k math reasoning. Agentic and tool-use traces are the next evaluation.</li>
+      <li><b>Benchmark scope.</b> Agentic results replay recorded trajectories and score single function-calling turns; a full closed-loop agent run (environment execution, multi-turn tool feedback) is still to do.</li>
       <li><b>Sample size.</b> 200 problems per point; full 1319-problem runs will tighten the end-to-end timings.</li>
       <li><b>The plateau.</b> TPF stops near 2.2. The training data was written by other models, while the drafter is scored against Nanbeige's own continuations; training on Nanbeige's self-generated responses is the first fix to test.</li>
       <li><b>Cheaper drafts.</b> Drafting with one loop instead of two halves the draft cost; a LoRA fine-tuned for layer skipping already recovered Qwen3-8B from TPF 1.43 to 2.22 in 60 steps.</li>
