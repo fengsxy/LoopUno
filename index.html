@@ -120,6 +120,7 @@ tr.hl td { font-weight: 600; }
 .diagram .ar.dash { stroke-dasharray: 4 3; }
 .diagram .ahd { fill: var(--ink-3); }
 .diagram .sep { stroke: var(--rule); stroke-width: 1; }
+.bib { margin: 0; overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.55; color: var(--ink-2); white-space: pre; }
 ul.notes { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; color: var(--ink-2); max-width: 80ch; }
 ul.notes b { color: var(--ink); font-weight: 600; }
 .setup { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px 32px; font-size: 0.9rem; }
@@ -360,6 +361,18 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
       <li><b>The plateau.</b> TPF stops near 2.2. The training data was written by other models, while the drafter is scored against Nanbeige's own continuations; training on Nanbeige's self-generated responses is the first fix to test.</li>
       <li><b>Cheaper drafts.</b> Drafting with one loop instead of two halves the draft cost.</li>
     </ul>
+  </section>
+
+  <section>
+    <div class="eyebrow">References</div>
+    <h2>References</h2>
+    <p class="prose">Subham Sekhar Sahoo, Lingjie Chen, Khiem Pham, Jonathan Geuter, Chaitanya Dwivedi, Varad Pimpalkhute, Yash Akhauri, Alexander Moreno, Mikhail Yurochkin, Zhenting Wang, Mostafa Elhoushi, Nolan Dey, Shane Bergsma, Joel Hestness, John Thickstun, Eric Xing, Zhengzhong Liu. <i>Unlocking Lossless Speedups in LLMs via Discrete Diffusion.</i> arXiv:2609.04010, 2026. <a href="https://arxiv.org/abs/2609.04010" style="color:var(--accent)">arxiv.org/abs/2609.04010</a></p>
+    <pre class="bib">@article{sahoo2026uno,
+  title   = {Unlocking Lossless Speedups in LLMs via Discrete Diffusion},
+  author  = {Sahoo, Subham Sekhar and Chen, Lingjie and Pham, Khiem and Geuter, Jonathan and Dwivedi, Chaitanya and Pimpalkhute, Varad and Akhauri, Yash and Moreno, Alexander and Yurochkin, Mikhail and Wang, Zhenting and Elhoushi, Mostafa and Dey, Nolan and Bergsma, Shane and Hestness, Joel and Thickstun, John and Xing, Eric and Liu, Zhengzhong},
+  journal = {arXiv preprint arXiv:2609.04010},
+  year    = {2026}
+}</pre>
   </section>
 
   <footer>Uno: "Unlocking Lossless Speedups in LLMs via Discrete Diffusion" (arXiv 2609.04010). Experiments run on the agent-core HyperPod cluster, Oct 24–25 2026.</footer>
