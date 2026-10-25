@@ -330,7 +330,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
     <div class="tabs" role="tablist" aria-label="Run">
       <button id="t-1e4" role="tab" aria-selected="true" data-k="1e4">lr 1e-4</button>
       <button id="t-1e5" role="tab" aria-selected="false" data-k="1e5">lr 1e-5</button>
-      <button id="t-qwen" role="tab" aria-selected="false" data-k="qwen">Qwen3-8B references</button>
+      <button id="t-qwen" role="tab" aria-selected="false" data-k="qwen">Qwen3-8B reference</button>
     </div>
     <div class="tbl"><table id="runs"></table></div>
     <p class="caption">gsm8k first 200 problems, 1 sample each, temperature 1.0, top-p 0.95, max 8192 output tokens, 8×A100-40GB with data parallel 8. Training time is wall clock on one 8×A100 node, including the warm-started continuation runs.</p>
@@ -358,7 +358,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
       <li><b>Benchmark scope.</b> Agentic results replay recorded trajectories and score single function-calling turns; a full closed-loop agent run (environment execution, multi-turn tool feedback) is still to do.</li>
       <li><b>Sample size.</b> 200 problems per point; full 1319-problem runs will tighten the end-to-end timings.</li>
       <li><b>The plateau.</b> TPF stops near 2.2. The training data was written by other models, while the drafter is scored against Nanbeige's own continuations; training on Nanbeige's self-generated responses is the first fix to test.</li>
-      <li><b>Cheaper drafts.</b> Drafting with one loop instead of two halves the draft cost; a LoRA fine-tuned for layer skipping already recovered Qwen3-8B from TPF 1.43 to 2.22 in 60 steps.</li>
+      <li><b>Cheaper drafts.</b> Drafting with one loop instead of two halves the draft cost.</li>
     </ul>
   </section>
 
@@ -456,13 +456,7 @@ lineChart(document.getElementById("c-speed"), {
 const QW = `<thead><tr><th>Qwen3-8B (reference)</th><th>Block</th><th>TPF</th><th>tok/s</th><th>Speedup</th><th>Accuracy</th></tr></thead><tbody>
 <tr><td class="grp" colspan="6">Uno release adapter, full gsm8k (1319)</td></tr>
 <tr><td>AR</td><td>1</td><td>1.00</td><td>1708</td><td>1.00×</td><td>95.6%</td></tr>
-<tr class="hl"><td>Uno (14.7B training tokens)</td><td>16</td><td>2.79</td><td>3728</td><td>2.18×</td><td>95.8%</td></tr>
-<tr><td class="grp" colspan="6">Draft-layer skip, first 200 problems</td></tr>
-<tr><td>No skip</td><td>16</td><td>2.77</td><td>3061</td><td>–</td><td>96.5%</td></tr>
-<tr><td>Skip layers 4–11, no training</td><td>16</td><td>2.44</td><td>2713</td><td>–</td><td>97.0%</td></tr>
-<tr><td>Skip layers 32–35, no training</td><td>16</td><td>1.43</td><td>1420</td><td>–</td><td>95.5%</td></tr>
-<tr><td>Skip 32–35, LoRA fine-tuned 20 steps</td><td>16</td><td>2.06</td><td>2455</td><td>–</td><td>96.0%</td></tr>
-<tr><td>Skip 32–35, LoRA fine-tuned 60 steps</td><td>16</td><td>2.22</td><td>2381</td><td>–</td><td>95.5%</td></tr></tbody>`;
+<tr class="hl"><td>Uno (14.7B training tokens)</td><td>16</td><td>2.79</td><td>3728</td><td>2.18×</td><td>95.8%</td></tr></tbody>`;
 
 function renderTable(k) {
   const t = document.getElementById("runs");
