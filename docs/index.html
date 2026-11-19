@@ -143,9 +143,9 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
     <div class="eyebrow">Uno diffusion drafting · Nanbeige4.2-3B looped · Oct 2026</div>
     <h1>LoopUno: Turning Agentic Looped LLMs into Diffusion LLMs <span>in One Hour</span></h1>
     <p style="margin:0;display:grid;gap:2px"><span style="font-weight:600">Longxuan Yu<sup>1</sup>, Siheng Xiong<sup>2</sup>, Greg Ver Steeg<sup>1</sup></span><span style="color:var(--ink-3);font-size:0.9rem"><sup>1</sup>University of California, Riverside &nbsp;·&nbsp; <sup>2</sup>Georgia Institute of Technology</span><span style="font-size:0.9rem"><a href="blog/" style="color:var(--accent)">Blog</a> &nbsp;·&nbsp; <a href="https://huggingface.co/liddlefish/LoopUno-Nanbeige4.2-3B" style="color:var(--accent)">Adapters on Hugging Face</a> &nbsp;·&nbsp; <a href="https://github.com/fengsxy/LoopUno" style="color:var(--accent)">GitHub</a></span></p>
-    <p class="lede">We train a single LoRA for 52 minutes, and Nanbeige4.2 starts writing two tokens per step. Function calls come out 1.98× faster and math reasoning 1.47× faster, with zero loss in quality, because the original model verifies every token.</p>
+    <p class="lede">We train a single LoRA for 52 minutes, and Nanbeige4.2 starts writing two tokens per forward pass. Function calls come out 1.98× faster and math reasoning 1.47× faster, with zero loss in quality, because the original model verifies every token.</p>
     <div class="stats">
-      <div class="stat"><div class="v num">2.04<small>TPF</small></div><div class="k">Tokens per step at 52 min</div><div class="d">60 steps, 31M tokens, lr 1e-4. AR is 1.00.</div></div>
+      <div class="stat"><div class="v num">2.04<small>TPF</small></div><div class="k">Tokens per forward at 52 min</div><div class="d">60 steps, 31M tokens, lr 1e-4. AR is 1.00.</div></div>
       <div class="stat"><div class="v num">1.47<small>×</small></div><div class="k">End-to-end decode speed</div><div class="d">2274 vs 1545 tok/s on gsm8k, 8×A100.</div></div>
       <div class="stat"><div class="v num">1.62<small>TPF</small></div><div class="k">After 8M tokens (14 min)</div><div class="d">Step 16. Already 1.13× faster end to end.</div></div>
       <div class="stat"><div class="v num">96.0<small>%</small></div><div class="k">Accuracy, unchanged</div><div class="d">Lossless verify: AR 96.0%, Uno 93–96% across checkpoints (200-sample noise ±1.7%).</div></div>
@@ -233,7 +233,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
             <rect class="chip" x="898" y="338" width="48" height="26" rx="4"/><text x="922" y="355" text-anchor="middle">each</text>
           </g>
         </g>
-        <text class="s" x="520" y="392">keep the longest prefix the original model agrees with: 2.04 tokens per step on average,</text>
+        <text class="s" x="520" y="392">keep the longest prefix the original model agrees with: 2.04 tokens per forward on average,</text>
         <text class="s" x="520" y="409">and the output distribution is exactly the original model's</text>
         <path class="ar dash" d="M946 351H964V79H950" marker-end="url(#ah)"/>
         <text class="s" x="958" y="225" text-anchor="middle" transform="rotate(90 958 225)">next step</text>
@@ -246,21 +246,21 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
       </div>
       <div class="prose" style="display:grid;gap:10px">
         <h3>Why the looped model fits</h3>
-        <p>Nanbeige4.2-3B <a class="cite" href="#ref-nanbeige">[2]</a> runs its 22 layers twice per token. At decode time it reads weights like a ~6.3B model, so it costs as much per step as Qwen3-8B (28.8 ms each). Drafting more tokens per step is where a looped model gains the most, and the LoRA trains through both loops with no change to the recipe beyond ZeRO-0 for the shared weights.</p>
+        <p>Nanbeige4.2-3B <a class="cite" href="#ref-nanbeige">[2]</a> runs its 22 layers twice per token. At decode time it reads weights like a ~6.3B model, so it costs as much per step as Qwen3-8B (28.8 ms each). Drafting more tokens per forward is where a looped model gains the most, and the LoRA trains through both loops with no change to the recipe beyond ZeRO-0 for the shared weights.</p>
       </div>
     </div>
   </section>
 
   <section>
     <div class="eyebrow">Scaling with training</div>
-    <h2>Tokens per step vs. training time</h2>
+    <h2>Tokens per forward vs. training time</h2>
     <div class="chart-card">
       <div class="chart-head">
         <p class="caption">gsm8k (first 200 problems), block 8, temperature 1.0. One step = 0.52M tokens ≈ 52 s on 8×A100. Hover a point for details.</p>
         <div class="legend"><span><i style="background:var(--accent)"></i>lr 1e-4</span><span><i style="background:var(--series-2)"></i>lr 1e-5 (official lr)</span><span><i class="dash"></i>references</span></div>
       </div>
       <div class="chart" id="c-tpf"></div>
-      <p class="caption">With lr 1e-4 most of the gain arrives in the first hour: TPF 2.04 at 52 min, then 2.18 after 3.5 h. lr 1e-5 needs ~4 h to reach the same point. Both curves flatten near 2.1–2.2, which is a per-position acceptance of about 0.54 (Qwen3-8B Uno reaches 0.64 after 14.7B tokens).</p>
+      <p class="caption">With lr 1e-4 most of the gain arrives in the first hour: TPF 2.04 at 52 min, then 2.18 after 3.5 h. lr 1e-5 needs ~4 h to reach the same point. Both curves flatten near 2.1–2.2. A decode step is two forwards and drafts 7 tokens; at TPF 2.18 it keeps about 2.4 of them (Qwen3-8B Uno keeps 3.6 of 15 after 14.7B tokens).</p>
     </div>
   </section>
 
@@ -327,7 +327,7 @@ footer { font-size: 0.82rem; color: var(--ink-3); border-top: 1px solid var(--ru
         </table>
       </div>
     </div>
-    <p class="caption">Decoding at small batch is bound by weight reads, so drafting 8 rows costs little more than 1. CUDA graphs are on in every evaluation; without them the draft rows would cost 1.66× instead of 1.15× (greedy).</p>
+    <p class="caption">Decoding at small batch is bound by weight reads, so drafting 8 rows costs little more than 1. A step is two forwards in both decoders. CUDA graphs are on in every evaluation; without them the draft rows would cost 1.66× instead of 1.15× (greedy).</p>
   </section>
 
   <section>
@@ -446,7 +446,7 @@ function tipBody(p, se) {
 }
 
 lineChart(document.getElementById("c-tpf"), {
-  aria: "Tokens per step versus training time for two learning rates",
+  aria: "Tokens per forward versus training time for two learning rates",
   x: [0, 270], y: [0.8, 3.0], xTicks: [0, 30, 60, 120, 180, 240], yTicks: [1, 1.5, 2, 2.5, 3], yFmt: t => t.toFixed(1),
   refs: [{y: 1, label: "AR 1.0"}, {y: 2.79, label: "Qwen3-8B 2.79"}], vref: {x: 60, label: "1 hour"},
   series: [
